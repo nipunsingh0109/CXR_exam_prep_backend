@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Exam {
+  id          String     @id @default(uuid())
+  name        String
+  slug        String     @unique
+  description String?
+  logoUrl     String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  pyqs             Pyq[]
+  tutorials        Tutorial[]
+  videoSubmissions VideoSubmission[]
+  practicePapers   PracticePaper[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Pyq {
+  id          String   @id @default(uuid())
+  examId      String
+  title       String
+  year        Int
+  fileUrl     String
+  fileName    String
+  fileSize    Int?
+  mimeType    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([year])
+  @@index([isActive])
+}
+
+model Tutorial {
+  id             String   @id @default(uuid())
+  examId         String
+  title          String
+  description    String?
+  youtubeUrl     String
+  youtubeVideoId String
+  thumbnailUrl   String?
+  year           Int?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  exam           Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([isActive])
+  @@index([year])
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VideoSubmission {
+  id              String   @id @default(uuid())
+  examId          String
+  title           String
+  youtubeUrl      String
+  youtubeVideoId  String
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  rejectionReason String?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  exam            Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId])
+  @@index([status])
+}
+
+model PracticePaper {
+  id          String   @id @default(uuid())
+  examId      String
+  title       String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exam        Exam               @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questions   PracticeQuestion[]
+
+  @@index([examId])
+  @@index([isActive])
+}
+
+model PracticeQuestion {
+  id              String   @id @default(uuid())
+  practicePaperId String
+  questionText    String
+  options         String[] // Array of strings for choices
+  correctAnswer   Int      // Index of correct option (0, 1, 2, 3...)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  practicePaper   PracticePaper @relation(fields: [practicePaperId], references: [id], onDelete: Cascade)
+
+  @@index([practicePaperId])
+}
